@@ -40,24 +40,9 @@ impl From<u8> for FtChar {
     }
 }
 
-// API wrapper
 pub fn ft_putchr<T: Into<FtChar>>(input: T) -> io::Result<usize> {
     let ft_char = input.into(); // Convert the input into FtChar enum
     _ft_putchr_impl(ft_char) // Call the internal function
-}
-
-fn main() {
-    // Test with a character
-    match ft_putchr('A') {
-        Ok(bytes) => println!("\nbytes_written: {}\n", bytes),
-        Err(e) => eprintln!("Error: {}", e),
-    }
-
-    // Test with an ASCII value
-    match ft_putchr(69) {
-        Ok(bytes) => println!("\nbytes_written: {}\n", bytes),
-        Err(e) => eprintln!("Error: {}", e),
-    }
 }
 
 #[cfg(test)]
@@ -66,13 +51,14 @@ mod tests {
 
     #[test]
     fn test_ft_putchr_char() {
-        let result = ft_putchr('B').expect("Failed to write character\n");
+        let result = ft_putchr('A').expect("Failed to write character\n");
         assert_eq!(result, 1);
+        let _result = ft_putchr('\n').expect("Failed to write character\n");
     }
 
     #[test]
     fn test_ft_putchr_int() {
-        let result = ft_putchr(66_u8).expect("Failed to write integer\n");
+        let result = ft_putchr(68_u8).expect("Failed to write integer\n");
         assert_eq!(result, 1);
     }
 

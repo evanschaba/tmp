@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "ft_putchr"
+name = "libft"
 version = "0.1.0"
