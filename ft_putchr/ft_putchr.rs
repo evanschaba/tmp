@@ -15,17 +15,6 @@ fn _ft_putchar_impl(c: char) -> io::Result<()> {
     Ok(())
 }
 
-// Public wrapper function to keep the API simple
-pub fn ft_putchar<T: Into<FtChar>>(input: T) -> io::Result<()> {
-    let ft_char = input.into(); // Convert the input into FtChar enum
-    let char_to_print = match ft_char {
-        FtChar::Char(ch) => ch,
-        FtChar::Int(n) => n as char, // Convert the integer to its ASCII character
-    };
-
-    _ft_putchar_impl(char_to_print)
-}
-
 // Enum to handle both characters and integers
 enum FtChar {
     Char(char),
@@ -43,6 +32,17 @@ impl From<u8> for FtChar {
     fn from(n: u8) -> Self {
         FtChar::Int(n)
     }
+}
+
+// Public wrapper function to keep the API simple
+pub fn ft_putchar<T: Into<FtChar>>(input: T) -> io::Result<()> {
+    let ft_char = input.into(); // Convert the input into FtChar enum
+    let char_to_print = match ft_char {
+        FtChar::Char(ch) => ch,
+        FtChar::Int(n) => n as char, // Convert the integer to its ASCII character
+    };
+
+    _ft_putchar_impl(char_to_print)
 }
 
 fn main() {
