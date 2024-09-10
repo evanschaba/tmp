@@ -1,23 +1,29 @@
 #!/bin/zsh
 
+dir="target/"
+name="tmp.out"
+output="$dir$name"
+
 # remove tmp file containing all the shell cmd output
-rm tmp; 
+rm -f $output; 
 
 # recreate tmp file
-touch tmp;
+mkdir -p $dir
+touch $output;
+
+echo "----------------------------------------------------------------------------------------------------------------- cargo check ----------------------------------------------------------------------------------------------------------------- \n" &>> $output;
 
 # compile src & dump output to tmp outputfile
-rustc ft_putchr.rs &> tmp;  
+cargo check &> $output;  
 
 # append ascii divider symbol to tmp file
-echo "----------------------------------------------------------------------------------------------------------------- exec ----------------------------------------------------------------------------------------------------------------- \n" &>> tmp;
+echo "----------------------------------------------------------------------------------------------------------------- cargo run ----------------------------------------------------------------------------------------------------------------- \n" &>> $output;
 
 # exec bin & append execution output to tmp outputfile
-./ft_putchr &>> tmp; 
+cargo run &>> $output; 
 
 # copy tmp outputfile contents to clipboard
-head -n 1000 tmp | pbcopy;
+head -n 10000 $output | pbcopy;
 
 # print output file using
-cat tmp; # aliased (bat -- prettier package for printing output that's better than cat)
-# head -n 10000 tmp; (print first 10 000 lines of a file along with its file name prefixed at the top)
+cat $output; # aliased (bat -- prettier package for printing output that's better than cat)
