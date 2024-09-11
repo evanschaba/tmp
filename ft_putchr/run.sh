@@ -1,41 +1,45 @@
 #!/bin/zsh
 
+# Configuration
 dir="target/"
 name="tmp.out"
 output="$dir$name"
 
-# remove tmp file containing all the shell cmd output
-rm -f $output; 
-
-# recreate tmp file
+# Remove and recreate the output file
+rm -f $output
 mkdir -p $dir
-touch $output;
+touch $output
 
-# lint the files
-echo "--------------------------------------------------------------------- cargo clippy --------------------------------------------------------------------- \n" &>> $output;
-cargo clippy &>> $output; 
-cargo clippy --fix --lib -p libft
-cargo fix --allow-dirty --allow-staged
+# Function to log and execute commands
+execute_and_log() {
+    local command="$1"
+    local description="$2"
+    
+    echo "--------------------------------------------------------------------- $description ---------------------------------------------------------------------" >> $output
+    echo "Executing: $command"
+    eval "$command" &>> $output
+}
 
-# format the files
-echo "--------------------------------------------------------------------- cargo fmt --------------------------------------------------------------------- \n" &>> $output;
-cargo fmt &>> $output; 
+# Lint the files
+execute_and_log "cargo clippy" "cargo clippy"
+execute_and_log "cargo clippy --fix --lib -p libft" "cargo clippy --fix --lib -p libft"
+execute_and_log "cargo fix --allow-dirty --allow-staged" "cargo fix --allow-dirty --allow-staged"
 
+# Format the files
+execute_and_log "cargo fmt" "cargo fmt"
 
-echo "--------------------------------------------------------------------- cargo check --------------------------------------------------------------------- \n" &>> $output;
-# compile src & dump output to tmp outputfile
-cargo check &> $output;  
+# Check the code
+execute_and_log "cargo check" "cargo check"
 
-echo "--------------------------------------------------------------------- cargo run --------------------------------------------------------------------- \n" &>> $output;
-# exec bin & append execution output to tmp outputfile
-cargo run &>> $output; 
+# Run the code
+execute_and_log "cargo run" "cargo run"
 
-echo "--------------------------------------------------------------------- cargo test --------------------------------------------------------------------- \n" &>> $output;
-# exec tests & append execution output to tmp outputfile
-cargo test &>> $output; 
+# Test the code
+execute_and_log "cargo test" "cargo test"
 
-# copy tmp outputfile contents to clipboard
-head -n 10000 $output src/*.rs | pbcopy;
+# Copy output to clipboard
+head -n 10000 $output src/*.rs | pbcopy
 
-# print output file using
-cat $output; # aliased (bat -- prettier package for printing output that's better than cat)
+# Print the output file
+cat $output # Use 'bat' for better output visualization if installed
+

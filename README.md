@@ -23,7 +23,7 @@ This repository includes a series of small projects showcasing Rust implementati
 2. **Navigate to the Repository Directory**
 
     ```bash
-    cd tmp
+    cd tmp && cd [project_dir_name]
     ```
 
 3. **Make Scripts Executable**
@@ -40,7 +40,7 @@ This repository includes a series of small projects showcasing Rust implementati
 
 ### What `watch.sh` Does
 
-The `watch.sh` script automates the development workflow by performing the following tasks:
+The `watch.sh` script located within each folder automates the development workflow by performing the following tasks:
 
 - **File Watching**: Monitors changes in the source files.
 - **Linting**: Runs Clippy to lint and auto-fix your code according to its suggestions.

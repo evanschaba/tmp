@@ -1,24 +1,23 @@
 #!/bin/zsh
 
-# Define a function to run custom logic
-cargo_watch_exec() {
-    # -x will use 'cargo run'
-    # -q will suppress cargo output
-    # -s will use a shell cmd
-    # -c will clear screen
-    # -w will watch a dir path
+# Define a function to run custom logic with cargo-watch
+run_cargo_watch() {
+    echo "Starting cargo-watch..."
     cargo watch -w src/ -s './run.sh'
 }
 
 # Check if cargo-watch is installed
-if cargo watch --version >/dev/null 2>&1; then
+if command -v cargo-watch >/dev/null 2>&1; then
     echo "cargo-watch is already installed."
-    # Run the command you want if cargo-watch is installed
-    cargo_watch_exec
+    run_cargo_watch
 else
     echo "cargo-watch is not installed. Installing..."
-    # Install cargo-watch
     cargo install cargo-watch
-    echo "cargo-watch has been installed."
-    cargo_watch_exec
+    if [ $? -eq 0 ]; then
+        echo "cargo-watch has been installed successfully."
+        run_cargo_watch
+    else
+        echo "Failed to install cargo-watch. Please install it manually and try again."
+        exit 1
+    fi
 fi
