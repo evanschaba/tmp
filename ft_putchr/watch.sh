@@ -5,7 +5,9 @@ cargo_watch_exec() {
     # -x will use 'cargo run'
     # -q will suppress cargo output
     # -s will use a shell cmd
-    cargo watch -s './run.sh'
+    # -c will clear screen
+    # -w will watch a dir path
+    cargo watch -w src/ -s './run.sh'
 }
 
 # Check if cargo-watch is installed

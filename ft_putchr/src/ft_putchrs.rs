@@ -105,16 +105,15 @@ mod tests {
     }
 
     fn _ft_putchrs_with_cursor<T: Into<FtChrsInput<'static>> + Clone>(input: T) {
-        // Create a Cursor buffer to capture the output
-        let mut buffer = Cursor::new(Vec::new());
+        // Create a Cursor buf to capture the output
+        let mut buf = Cursor::new(Vec::new());
 
-        // Redirect output to the buffer instead of stdout
+        // Redirect output to the buf instead of stdout
         let _written =
-            ft_putchrs_with_writer(input.clone(), &mut buffer).expect("Failed to write input");
+            ft_putchrs_with_writer(input.clone(), &mut buf).expect("Failed to write input");
 
-        // Convert the buffer content to a string (in case of valid UTF-8 data)
-        let output =
-            String::from_utf8(buffer.into_inner()).expect("Failed to convert buffer to string");
+        // Convert the buf content to a string (in case of valid UTF-8 data)
+        let output = String::from_utf8(buf.into_inner()).expect("Failed to convert buf to string");
 
         // Assert that the output matches the expected string
         match input.into() {
@@ -130,25 +129,24 @@ mod tests {
     #[test]
     fn test_ft_putchrs_with_cursor() {
         _ft_putchrs_with_cursor("hello world");
-        _ft_putchrs_with_cursor(&[72, 101]); // Same param type as ft_putchrs function
+        _ft_putchrs_with_cursor(&[72, 101]);
 
-        let hello_lower_case_bytes = &[
+        // "hello"
+        _ft_putchrs_with_cursor(&[
             ('A' as u8 + 32 + 7),  // 'h': 65 + 7 = 72 (ASCII 'H') + 32 = 'h'
             ('A' as u8 + 32 + 4),  // 'e': 65 + 4 = 69 (ASCII 'E') + 32 = 'e'
             ('A' as u8 + 32 + 11), // 'l': 65 + 11 = 76 (ASCII 'L') + 32 = 'l'
             ('A' as u8 + 32 + 11), // 'l': 65 + 11 = 76 (ASCII 'L') + 32 = 'l'
             ('A' as u8 + 32 + 14), // 'o': 65 + 14 = 79 (ASCII 'O') + 32 = 'o'
-        ];
-        _ft_putchrs_with_cursor(hello_lower_case_bytes); // Same param type as ft_putchrs function
-                                                         // Test with ASCII values for "hello"
-        let hello_upper_case_bytes = &[
+        ]);
+
+        // "HELLO"
+        _ft_putchrs_with_cursor(&[
             ((('A' as u8) + 7) % 128),  // 'h': 65 + 7 = 72 (ASCII 'H') + 32 = 'h'
             ((('A' as u8) + 4) % 128),  // 'e': 65 + 4 = 69 (ASCII 'E') + 32 = 'e'
             ((('A' as u8) + 11) % 128), // 'l': 65 + 11 = 76 (ASCII 'L') + 32 = 'l'
             ((('A' as u8) + 11) % 128), // 'l': 65 + 11 = 76 (ASCII 'L') + 32 = 'l'
             ((('A' as u8) + 14) % 128), // 'o': 65 + 14 = 79 (ASCII 'O') + 32 = 'o'
-        ];
-        
-        _ft_putchrs_with_cursor(hello_upper_case_bytes); // Same param type as ft_putchrs function
+        ]);
     }
 }

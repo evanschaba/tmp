@@ -11,9 +11,15 @@ rm -f $output;
 mkdir -p $dir
 touch $output;
 
-# reset term 
-reset;
+# format the files
+echo "--------------------------------------------------------------------- cargo fmt --------------------------------------------------------------------- \n" &>> $output;
+cargo fmt &>> $output; 
 
+# lint the files
+echo "--------------------------------------------------------------------- cargo clippy --------------------------------------------------------------------- \n" &>> $output;
+cargo clippy &>> $output; 
+cargo clippy --fix --lib -p libft
+cargo fix --allow-dirty
 echo "--------------------------------------------------------------------- cargo check --------------------------------------------------------------------- \n" &>> $output;
 # compile src & dump output to tmp outputfile
 cargo check &> $output;  
@@ -27,7 +33,7 @@ echo "--------------------------------------------------------------------- carg
 cargo test &>> $output; 
 
 # copy tmp outputfile contents to clipboard
-head -n 10000 $output | pbcopy;
+head -n 10000 $output src/*.rs | pbcopy;
 
 # print output file using
 cat $output; # aliased (bat -- prettier package for printing output that's better than cat)
