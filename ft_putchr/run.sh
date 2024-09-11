@@ -11,15 +11,17 @@ rm -f $output;
 mkdir -p $dir
 touch $output;
 
-# format the files
-echo "--------------------------------------------------------------------- cargo fmt --------------------------------------------------------------------- \n" &>> $output;
-cargo fmt &>> $output; 
-
 # lint the files
 echo "--------------------------------------------------------------------- cargo clippy --------------------------------------------------------------------- \n" &>> $output;
 cargo clippy &>> $output; 
 cargo clippy --fix --lib -p libft
 cargo fix --allow-dirty --allow-staged
+
+# format the files
+echo "--------------------------------------------------------------------- cargo fmt --------------------------------------------------------------------- \n" &>> $output;
+cargo fmt &>> $output; 
+
+
 echo "--------------------------------------------------------------------- cargo check --------------------------------------------------------------------- \n" &>> $output;
 # compile src & dump output to tmp outputfile
 cargo check &> $output;  
