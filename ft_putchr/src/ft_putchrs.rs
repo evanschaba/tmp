@@ -8,21 +8,21 @@ pub enum FtChrsInput<'a> {
 }
 
 /// Implement `Into` for `FtChrsInput` to convert `&str` and `&[u8]` into `FtChrsInput`
-impl<'a> Into<FtChrsInput<'a>> for &'a str {
-    fn into(self) -> FtChrsInput<'a> {
-        FtChrsInput::Str(self)
+impl<'a> From<&'a str> for FtChrsInput<'a> {
+    fn from(val: &'a str) -> Self {
+        FtChrsInput::Str(val)
     }
 }
 
-impl<'a> Into<FtChrsInput<'a>> for &'a [u8] {
-    fn into(self) -> FtChrsInput<'a> {
-        FtChrsInput::Bytes(self)
+impl<'a> From<&'a [u8]> for FtChrsInput<'a> {
+    fn from(val: &'a [u8]) -> Self {
+        FtChrsInput::Bytes(val)
     }
 }
 
-impl<'a, const N: usize> Into<FtChrsInput<'a>> for &'a [u8; N] {
-    fn into(self) -> FtChrsInput<'a> {
-        FtChrsInput::Bytes(self)
+impl<'a, const N: usize> From<&'a [u8; N]> for FtChrsInput<'a> {
+    fn from(val: &'a [u8; N]) -> Self {
+        FtChrsInput::Bytes(val)
     }
 }
 

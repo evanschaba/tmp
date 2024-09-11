@@ -19,7 +19,7 @@ cargo fmt &>> $output;
 echo "--------------------------------------------------------------------- cargo clippy --------------------------------------------------------------------- \n" &>> $output;
 cargo clippy &>> $output; 
 cargo clippy --fix --lib -p libft
-cargo fix --allow-dirty
+cargo fix --allow-dirty --allow-staged
 echo "--------------------------------------------------------------------- cargo check --------------------------------------------------------------------- \n" &>> $output;
 # compile src & dump output to tmp outputfile
 cargo check &> $output;  
