@@ -129,6 +129,7 @@ mod tests {
     #[test]
     fn test_ft_putchrs_with_cursor() {
         _ft_putchrs_with_cursor("hello world");
+
         _ft_putchrs_with_cursor(&[72, 101]);
 
         // "hello"

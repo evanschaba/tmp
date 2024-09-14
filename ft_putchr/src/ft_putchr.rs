@@ -53,7 +53,6 @@ mod tests {
     fn test_ft_putchr_char() {
         let result = ft_putchr('A').expect("Failed to write character\n");
         assert_eq!(result, 1);
-        let _result = ft_putchr('\n').expect("Failed to write character\n");
     }
 
     #[test]
