@@ -1,5 +1,5 @@
-use libft::ft_putchr::ft_putchr;
-use libft::ft_putchrs::ft_putchrs;
+use tmp::ft_putchr::ft_putchr;
+use tmp::ft_putchrs::ft_putchrs;
 
 fn main() {
     match ft_putchr('A') {
