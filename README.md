@@ -23,7 +23,7 @@ This repository includes a series of small projects showcasing Rust implementati
 2. **Navigate to the Repository Directory**
 
     ```bash
-    cd tmp && cd [project_dir_name]
+    cd tmp && cd #dir_name
     ```
 
 3. **Make Scripts Executable**
