@@ -10,3 +10,6 @@ members = [
 ]
 
 [dependencies]
+add = { path = "lib/add" }
+sub = { path = "lib/sub" }
+
