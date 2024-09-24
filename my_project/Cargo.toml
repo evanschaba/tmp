@@ -11,5 +11,6 @@ members = [
 
 [dependencies]
 add = { path = "lib/add" }
+rand = "0.8.5"
 sub = { path = "lib/sub" }
 
