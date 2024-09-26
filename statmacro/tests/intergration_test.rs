@@ -29,7 +29,7 @@ where
 fn test_memory_address() {
     let instance = Example {
         a: 42,
-        b: f64::consts::PI,
+        b: std::f64::consts::PI,
         c: [0; 128],
     };
     let output = capture_output(|| instance.print_memory_address());
@@ -40,7 +40,7 @@ fn test_memory_address() {
 fn test_size() {
     let instance = Example {
         a: 42,
-        b: f64::consts::PI,
+        b: std::f64::consts::PI,
         c: [0; 128],
     };
     let output = capture_output(|| instance.print_size());
@@ -51,7 +51,7 @@ fn test_size() {
 fn test_field_stats() {
     let instance = Example {
         a: 42,
-        b: f64::consts::PI,
+        b: std::f64::consts::PI,
         c: [0; 128],
     };
     let output = capture_output(|| instance.print_field_stats());
@@ -62,7 +62,7 @@ fn test_field_stats() {
 fn test_non_stats_field() {
     let instance = Example {
         a: 42,
-        b: f64::consts::PI,
+        b: std::f64::consts::PI,
         c: [0; 128],
     };
     let output = capture_output(|| instance.print_field_stats());

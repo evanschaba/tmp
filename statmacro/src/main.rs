@@ -14,7 +14,7 @@ pub struct Example {
 fn main() {
     let instance = Example {
         a: 42,
-        b: 3.14,
+        b: std::f64::consts::PI,
         c: [0; 128],
     };
 

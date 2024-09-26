@@ -9,7 +9,7 @@ tmp_file="tmp"
 # Run cargo commands to format and lint the code first
 {
     cargo fmt
-    cargo clippy --fix --all-targets --all-features
+    cargo clippy --fix --all-targets --all-features --allow-dirty --allow-staged
 } >> "$tmp_file" 2>&1
 
 # Collect the first 1000 lines of all .rs files and append to tmp_file
