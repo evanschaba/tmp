@@ -1,4 +1,4 @@
-use stats_mac::Stats;
+use stat_macro::Stats;
 
 #[derive(Stats)] // applicable to structs
 pub struct Example {

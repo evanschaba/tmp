@@ -1,5 +1,5 @@
 [package]
-name = "stats_mac"
+name = "stat_macro"
 version = "0.1.0"
 edition = "2021"
 

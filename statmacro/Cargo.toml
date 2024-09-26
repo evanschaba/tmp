@@ -1,14 +1,14 @@
 [package]
-name = "stats_macro"
+name = "statmacro"
 version = "0.1.0"
 edition = "2021"
 
 [workspace]
 members = [
-    "lib/stats_mac",
+    "lib/stat_macro",
 ]
 
 [dependencies]
-stats_mac = { path = "lib/stats_mac" }
+stat_macro = { path = "lib/stat_macro" }
 rand = "0.8.5"
 
