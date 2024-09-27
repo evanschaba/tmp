@@ -33,7 +33,7 @@ fn test_memory_address() {
         c: [0; 128],
     };
     let output = capture_output(|| instance.print_memory_address());
-    assert!(output.contains("Memory address of Example:"));
+    assert!(output.contains("Memory address of Example: "));
 }
 
 #[test]
@@ -44,7 +44,7 @@ fn test_size() {
         c: [0; 128],
     };
     let output = capture_output(|| instance.print_size());
-    assert!(output.contains("Size of Example:"));
+    assert!(output.contains("Size of Example: "));
 }
 
 #[test]
@@ -55,7 +55,7 @@ fn test_field_stats() {
         c: [0; 128],
     };
     let output = capture_output(|| instance.print_field_stats());
-    assert!(output.contains("Field `c`: memory address:"));
+    assert!(output.contains("Field `c`: memory address: "));
 }
 
 #[test]
@@ -66,5 +66,5 @@ fn test_non_stats_field() {
         c: [0; 128],
     };
     let output = capture_output(|| instance.print_field_stats());
-    assert!(!output.contains("Field `a`: memory address:"));
+    assert!(!output.contains("Field `a`: memory address:  "));
 }
