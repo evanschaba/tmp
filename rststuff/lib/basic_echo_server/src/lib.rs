@@ -102,7 +102,7 @@ mod tests {
     #[tokio::test]
     async fn test_echo_server() {
         let addr = "127.0.0.1:8081";
-        let notify = Arc::new(Notify::new());
+        let notify: Arc<Notify> = Arc::new(Notify::new());
 
         // Spawn the echo server in a separate task
         let notify_clone = Arc::clone(&notify);
