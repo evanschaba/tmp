@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["lib/stat_macro"]
+members = ["lib/stat_macro", "lib/basic_echo_server"]
 
 [dependencies]
 stat_macro = { path = "lib/stat_macro" }
