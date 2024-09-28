@@ -1,12 +1,25 @@
 use rand::Rng;
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpListener,
+};
+
+/// accept 1 message req & echo back
+async fn basic_echo_server() {
+    let addr = "0.0.0.0:8081";
+    let listener = TcpListener::bind(addr).await.unwrap();
+
+    let (mut tcp_stream, _socket_addr) = listener.accept().await.unwrap();
+
+    // read data received from client into here
+    let mut buf = [0u8; 1024]; // 1kb buf
+    let bytes_read = tcp_stream.read(&mut buf).await.unwrap();
+
+    tcp_stream.write_all(&buf[..bytes_read]).await.unwrap();
+}
 
 #[tokio::main]
 async fn main() {
-    let x = rand::thread_rng().gen_range::<u8, _>(u8::MIN..=u8::MAX);
-    let y = rand::thread_rng().gen_range::<u8, _>(u8::MIN..=u8::MAX);
-
-    println!("{x} + {y} = {}", x.wrapping_add(y));
-    println!("{x} * {y} = {}", x.wrapping_mul(y));
-    println!("{x} / {y} = {}", x.wrapping_div(if y == 0 { 1 } else { y })); // Prevents division by zero
-    println!("{x} - {y} = {}", x.wrapping_sub(y));
+    let _ = rand::thread_rng().gen_range::<u8, _>(0..=16);
+    basic_echo_server().await;
 }
