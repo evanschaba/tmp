@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["lib/stat_macro", "lib/basic_echo_server"]
+members = ["lib/basic_echo_server"]
 
 [dependencies]
-stat_macro = { path = "lib/stat_macro" }
 basic_echo_server = { path = "lib/basic_echo_server" }
 rand = "0.8.5"
 tokio = { version = "1.40.0", features = ["full"] }

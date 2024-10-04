@@ -35,4 +35,4 @@ cat "$tmp_file" | pbcopy
 echo "$loc"
 
 # Clean up the temporary file
-rm "$tmp_file"
+#rm "$tmp_file"
