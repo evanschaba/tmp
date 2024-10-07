@@ -1,16 +1,110 @@
-fn parse_sudoku(input: &str, cell_delim: &str, row_delim: &str, group_delim: &str) -> Vec<Vec<u8>> {
-    let mut sudoku = Vec::new();
+const GRID_SIZE: usize = 9;
+const SUBGRID_SIZE: usize = 3;
 
-    for group in input.split(group_delim) {
-        for row in group.trim().split(row_delim) {
-            let cells: Vec<u8> = row
-                .trim()
-                .split(cell_delim)
-                .filter_map(|num| num.trim().parse::<u8>().ok())
-                .collect();
+struct SudokuSolver {
+    board: Vec<Vec<u8>>,
+    row_bits: [u16; GRID_SIZE],
+    col_bits: [u16; GRID_SIZE],
+    box_bits: [u16; GRID_SIZE],
+}
 
-            if !cells.is_empty() {
-                sudoku.push(cells);
+impl SudokuSolver {
+    fn new(board: Vec<Vec<u8>>) -> Self {
+        let mut row_bits = [0u16; GRID_SIZE];
+        let mut col_bits = [0u16; GRID_SIZE];
+        let mut box_bits = [0u16; GRID_SIZE];
+
+        for i in 0..GRID_SIZE {
+            for j in 0..GRID_SIZE {
+                if board[i][j] != 0 {
+                    let num = board[i][j] - 1;
+
+                    row_bits[i] |= 1 << num;
+                    col_bits[j] |= 1 << num;
+                    box_bits[(i / SUBGRID_SIZE) * SUBGRID_SIZE + j / SUBGRID_SIZE] |= 1 << num;
+                }
+            }
+        }
+
+        Self {
+            board,
+            row_bits,
+            col_bits,
+            box_bits,
+        }
+    }
+
+    fn is_safe(&self, row: usize, col: usize, num: u8) -> bool {
+        let num_bit = 1 << (num - 1);
+        let box_index = (row / SUBGRID_SIZE) * SUBGRID_SIZE + col / SUBGRID_SIZE;
+
+        (self.row_bits[row] & num_bit) == 0
+            && (self.col_bits[col] & num_bit) == 0
+            && (self.box_bits[box_index] & num_bit) == 0
+    }
+
+    fn place_number(&mut self, row: usize, col: usize, num: u8) {
+        let num_bit = 1 << (num - 1);
+        let box_index = (row / SUBGRID_SIZE) * SUBGRID_SIZE + col / SUBGRID_SIZE;
+
+        self.row_bits[row] |= num_bit;
+        self.col_bits[col] |= num_bit;
+        self.box_bits[box_index] |= num_bit;
+
+        self.board[row][col] = num;
+    }
+
+    fn remove_number(&mut self, row: usize, col: usize, num: u8) {
+        let num_bit = 1 << (num - 1);
+        let box_index = (row / SUBGRID_SIZE) * SUBGRID_SIZE + col / SUBGRID_SIZE;
+
+        self.row_bits[row] &= !num_bit;
+        self.col_bits[col] &= !num_bit;
+        self.box_bits[box_index] &= !num_bit;
+
+        self.board[row][col] = 0;
+    }
+
+    fn solve(&mut self) -> bool {
+        for row in 0..GRID_SIZE {
+            for col in 0..GRID_SIZE {
+                if self.board[row][col] == 0 {
+                    for num in 1..=9 {
+                        if self.is_safe(row, col, num) {
+                            self.place_number(row, col, num);
+                            if self.solve() {
+                                return true;
+                            }
+                            self.remove_number(row, col, num);
+                        }
+                    }
+                    return false;
+                }
+            }
+        }
+        true
+    }
+}
+
+fn parse_sudoku(input: &str) -> Vec<Vec<u8>> {
+    let mut sudoku = vec![vec![0; GRID_SIZE]; GRID_SIZE];
+    let rows: Vec<&str> = input.trim().lines().collect();
+
+    if rows.len() != GRID_SIZE {
+        panic!("Invalid number of rows in input.");
+    }
+
+    for (i, row) in rows.iter().enumerate() {
+        let cells: Vec<&str> = row.split_whitespace().collect();
+        if cells.len() != GRID_SIZE {
+            panic!("Invalid number of columns in row {}.", i + 1);
+        }
+
+        for (j, cell) in cells.iter().enumerate() {
+            if let Ok(num) = cell.parse::<u8>() {
+                if j < GRID_SIZE {
+                    sudoku[i][j] = num;
+                }
             }
         }
     }
@@ -18,83 +112,38 @@ fn parse_sudoku(input: &str, cell_delim: &str, row_delim: &str, group_delim: &st
     sudoku
 }
 
-fn is_valid_sudoku(sudoku: &[Vec<u8>]) -> bool {
-    // Check if each row is valid (no duplicates in non-zero values)
-    for row in sudoku {
-        if !is_unique(&row) {
-            return false;
+fn print_sudoku(sudoku: &Vec<Vec<u8>>) {
+    for (i, row) in sudoku.iter().enumerate() {
+        if i % 3 == 0 && i != 0 {
+            println!();
         }
-    }
-
-    // Check if each column is valid (no duplicates in non-zero values)
-    for col_idx in 0..sudoku.len() {
-        let mut col = Vec::new();
-        for row in sudoku {
-            col.push(row[col_idx]);
-        }
-        if !is_unique(&col) {
-            return false;
-        }
-    }
-
-    // Check if each 3x3 subgrid is valid
-    for block_row in (0..9).step_by(3) {
-        for block_col in (0..9).step_by(3) {
-            let mut block = Vec::new();
-            for i in 0..3 {
-                for j in 0..3 {
-                    block.push(sudoku[block_row + i][block_col + j]);
-                }
+        for (j, cell) in row.iter().enumerate() {
+            if j % 3 == 0 && j != 0 {
+                print!("  ");
             }
-            if !is_unique(&block) {
-                return false;
-            }
+            print!("{} ", cell);
         }
+        println!();
     }
-
-    true
 }
-
-fn is_unique(numbers: &[u8]) -> bool {
-    let mut seen = vec![false; 10]; // We use a vector to track which numbers (1-9) have been seen
-
-    for &num in numbers {
-        if num != 0 {
-            if seen[num as usize] {
-                return false; // Duplicate found
-            }
-            seen[num as usize] = true;
-        }
-    }
-
-    true
-}
-
 fn main() {
-    // Example input
-    let sudoku_str = "9 6 5  8 4 0  0 2 7
-         0 3 2  0 0 7  4 0 0
-         0 0 1  0 0 9  8 6 3
+    let sudoku_str = "9 6 5 8 4 0 0 2 7
+         0 3 2 0 0 7 4 0 0
+         0 0 1 0 0 9 8 6 3
+         1 5 4 9 0 0 0 0 0
+         6 0 9 0 5 8 0 0 0
+         3 8 7 6 1 4 0 9 0
+         0 0 0 7 0 6 5 0 0
+         0 7 6 2 0 0 9 3 0
+         5 9 8 0 3 0 6 7 0";
 
-         1 5 4  9 0 0  0 0 0
-         6 0 9  0 5 8  0 0 0
-         3 8 7  6 1 4  0 9 0
+    let sudoku = parse_sudoku(sudoku_str);
+    let mut solver = SudokuSolver::new(sudoku);
 
-         0 0 0  7 0 6  5 0 0
-         0 7 6  2 0 0  9 3 0
-         5 9 8  0 3 0  6 7 0";
-
-    // Parse the input into a 2D grid
-    let sudoku = parse_sudoku(sudoku_str, " ", "\n", "\n\n");
-
-    // Check if the Sudoku is valid
-    if is_valid_sudoku(&sudoku) {
-        println!("The Sudoku grid is valid.");
+    if solver.solve() {
+        println!("Solved Sudoku:");
+        print_sudoku(&solver.board);
     } else {
-        println!("The Sudoku grid is invalid.");
-    }
-    // Print the parsed Sudoku grid
-    for row in sudoku {
-        println!("{:?}", row);
+        println!("No solution found.");
     }
 }
