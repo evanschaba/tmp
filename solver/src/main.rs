@@ -1,149 +1,86 @@
-const GRID_SIZE: usize = 9;
-const SUBGRID_SIZE: usize = 3;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::error::Error;
+use std::fmt::Debug;
 
-struct SudokuSolver {
-    board: Vec<Vec<u8>>,
-    row_bits: [u16; GRID_SIZE],
-    col_bits: [u16; GRID_SIZE],
-    box_bits: [u16; GRID_SIZE],
-}
+/// A macro to create a thread-safe version of any struct by wrapping each field in `Arc<Mutex<>>`.
+macro_rules! thread_safe_struct {
+    // Define a thread-safe version of the struct with fields wrapped.
+    ($struct_name:ident { $($field:ident : $type:ty),* $(,)? }) => {
+        #[derive(Debug)]
+        pub struct $struct_name {
+            $(pub $field: Arc<Mutex<$type>>),*
+        }
 
-impl SudokuSolver {
-    fn new(board: Vec<Vec<u8>>) -> Self {
-        let mut row_bits = [0u16; GRID_SIZE];
-        let mut col_bits = [0u16; GRID_SIZE];
-        let mut box_bits = [0u16; GRID_SIZE];
-
-        for i in 0..GRID_SIZE {
-            for j in 0..GRID_SIZE {
-                if board[i][j] != 0 {
-                    let num = board[i][j] - 1;
-
-                    row_bits[i] |= 1 << num;
-                    col_bits[j] |= 1 << num;
-                    box_bits[(i / SUBGRID_SIZE) * SUBGRID_SIZE + j / SUBGRID_SIZE] |= 1 << num;
+        impl $struct_name {
+            // Constructor to create the struct and initialize each field.
+            pub fn new($($field: $type),*) -> Self {
+                Self {
+                    $($field: Arc::new(Mutex::new($field))),*
                 }
             }
-        }
 
-        Self {
-            board,
-            row_bits,
-            col_bits,
-            box_bits,
-        }
-    }
+            // Thread-safe getter for a field.
+            $(pub fn get_$field(&self) -> Result<$type, Box<dyn Error>> where $type: Copy {
+                let value = self.$field.lock()?;
+                Ok(*value)
+            })*
 
-    fn is_safe(&self, row: usize, col: usize, num: u8) -> bool {
-        let num_bit = 1 << (num - 1);
-        let box_index = (row / SUBGRID_SIZE) * SUBGRID_SIZE + col / SUBGRID_SIZE;
+            // Thread-safe setter for a field.
+            $(pub fn set_$field(&self, new_value: $type) -> Result<(), Box<dyn Error>> {
+                let mut value = self.$field.lock()?;
+                *value = new_value;
+                Ok(())
+            })*
 
-        (self.row_bits[row] & num_bit) == 0
-            && (self.col_bits[col] & num_bit) == 0
-            && (self.box_bits[box_index] & num_bit) == 0
-    }
+            // Multi-threaded initialization for each field.
+            pub fn multi_threaded_init(&self) -> Result<(), Box<dyn Error>> {
+                let mut handles = vec![];
 
-    fn place_number(&mut self, row: usize, col: usize, num: u8) {
-        let num_bit = 1 << (num - 1);
-        let box_index = (row / SUBGRID_SIZE) * SUBGRID_SIZE + col / SUBGRID_SIZE;
+                // Spawn threads to initialize/update each field concurrently.
+                $(
+                    let field_clone = Arc::clone(&self.$field);
+                    let handle = thread::spawn(move || {
+                        let mut value = field_clone.lock().unwrap();
+                        *value += 1; // Example thread modification
+                        println!("Updated field {} to {}", stringify!($field), *value);
+                    });
+                    handles.push(handle);
+                )*
 
-        self.row_bits[row] |= num_bit;
-        self.col_bits[col] |= num_bit;
-        self.box_bits[box_index] |= num_bit;
-
-        self.board[row][col] = num;
-    }
-
-    fn remove_number(&mut self, row: usize, col: usize, num: u8) {
-        let num_bit = 1 << (num - 1);
-        let box_index = (row / SUBGRID_SIZE) * SUBGRID_SIZE + col / SUBGRID_SIZE;
-
-        self.row_bits[row] &= !num_bit;
-        self.col_bits[col] &= !num_bit;
-        self.box_bits[box_index] &= !num_bit;
-
-        self.board[row][col] = 0;
-    }
-
-    fn solve(&mut self) -> bool {
-        for row in 0..GRID_SIZE {
-            for col in 0..GRID_SIZE {
-                if self.board[row][col] == 0 {
-                    for num in 1..=9 {
-                        if self.is_safe(row, col, num) {
-                            self.place_number(row, col, num);
-                            if self.solve() {
-                                return true;
-                            }
-                            self.remove_number(row, col, num);
-                        }
-                    }
-                    return false;
+                for handle in handles {
+                    handle.join().unwrap();
                 }
+
+                Ok(())
             }
         }
-        true
-    }
+    };
 }
 
-fn parse_sudoku(input: &str) -> Vec<Vec<u8>> {
-    let mut sudoku = vec![vec![0; GRID_SIZE]; GRID_SIZE];
-    let rows: Vec<&str> = input.trim().lines().collect();
+// Example usage of the macro to define a thread-safe struct `MyStruct`.
+thread_safe_struct!(MyStruct {
+    value1: i32,
+    value2: i32,
+});
 
-    if rows.len() != GRID_SIZE {
-        panic!("Invalid number of rows in input.");
-    }
+fn main() -> Result<(), Box<dyn Error>> {
+    // Create a new instance of the thread-safe struct.
+    let my_struct = MyStruct::new(10, 20);
 
-    for (i, row) in rows.iter().enumerate() {
-        let cells: Vec<&str> = row.split_whitespace().collect();
-        if cells.len() != GRID_SIZE {
-            panic!("Invalid number of columns in row {}.", i + 1);
-        }
+    // Multi-threaded initialization of fields.
+    my_struct.multi_threaded_init()?;
 
-        for (j, cell) in cells.iter().enumerate() {
-            if let Ok(num) = cell.parse::<u8>() {
-                if j < GRID_SIZE {
-                    sudoku[i][j] = num;
-                }
-            }
-        }
-    }
+    // Thread-safe access to fields.
+    println!("Value1: {}", my_struct.get_value1()?);
+    println!("Value2: {}", my_struct.get_value2()?);
 
-    sudoku
-}
+    // Thread-safe modification of fields.
+    my_struct.set_value1(100)?;
+    my_struct.set_value2(200)?;
 
-fn print_sudoku(sudoku: &Vec<Vec<u8>>) {
-    for (i, row) in sudoku.iter().enumerate() {
-        if i % 3 == 0 && i != 0 {
-            println!();
-        }
-        for (j, cell) in row.iter().enumerate() {
-            if j % 3 == 0 && j != 0 {
-                print!("  ");
-            }
-            print!("{} ", cell);
-        }
-        println!();
-    }
-}
-fn main() {
-    let sudoku_str = "9 6 5 8 4 0 0 2 7
-         0 3 2 0 0 7 4 0 0
-         0 0 1 0 0 9 8 6 3
-         1 5 4 9 0 0 0 0 0
-         6 0 9 0 5 8 0 0 0
-         3 8 7 6 1 4 0 9 0
-         0 0 0 7 0 6 5 0 0
-         0 7 6 2 0 0 9 3 0
-         5 9 8 0 3 0 6 7 0";
+    println!("Updated Value1: {}", my_struct.get_value1()?);
+    println!("Updated Value2: {}", my_struct.get_value2()?);
 
-    let sudoku = parse_sudoku(sudoku_str);
-    let mut solver = SudokuSolver::new(sudoku);
-
-    if solver.solve() {
-        println!("Solved Sudoku:");
-        print_sudoku(&solver.board);
-    } else {
-        println!("No solution found.");
-    }
+    Ok(())
 }
