@@ -1,86 +1,147 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::error::Error;
-use std::fmt::Debug;
+use std::{
+    collections::HashMap,
+    net::SocketAddr,
+    sync::{Arc, Mutex},
+    thread,
+};
+use tokio::runtime::Runtime;
+use async_graphql::{Schema, Object, Context};
+use async_graphql_warp::{GraphQLResponse, GraphQLRequest};
+use warp::{Filter, http::Response};
+use futures::future::join_all;
+use serde::{Serialize, Deserialize};
+use rmp_serde::{encode, decode};
+use std::sync::mpsc::{channel, Sender, Receiver};
+use quinn::{Endpoint, ServerConfig};
 
-/// A macro to create a thread-safe version of any struct by wrapping each field in `Arc<Mutex<>>`.
-macro_rules! thread_safe_struct {
-    // Define a thread-safe version of the struct with fields wrapped.
-    ($struct_name:ident { $($field:ident : $type:ty),* $(,)? }) => {
-        #[derive(Debug)]
-        pub struct $struct_name {
-            $(pub $field: Arc<Mutex<$type>>),*
-        }
-
-        impl $struct_name {
-            // Constructor to create the struct and initialize each field.
-            pub fn new($($field: $type),*) -> Self {
-                Self {
-                    $($field: Arc::new(Mutex::new($field))),*
-                }
-            }
-
-            // Thread-safe getter for a field.
-            $(pub fn get_$field(&self) -> Result<$type, Box<dyn Error>> where $type: Copy {
-                let value = self.$field.lock()?;
-                Ok(*value)
-            })*
-
-            // Thread-safe setter for a field.
-            $(pub fn set_$field(&self, new_value: $type) -> Result<(), Box<dyn Error>> {
-                let mut value = self.$field.lock()?;
-                *value = new_value;
-                Ok(())
-            })*
-
-            // Multi-threaded initialization for each field.
-            pub fn multi_threaded_init(&self) -> Result<(), Box<dyn Error>> {
-                let mut handles = vec![];
-
-                // Spawn threads to initialize/update each field concurrently.
-                $(
-                    let field_clone = Arc::clone(&self.$field);
-                    let handle = thread::spawn(move || {
-                        let mut value = field_clone.lock().unwrap();
-                        *value += 1; // Example thread modification
-                        println!("Updated field {} to {}", stringify!($field), *value);
-                    });
-                    handles.push(handle);
-                )*
-
-                for handle in handles {
-                    handle.join().unwrap();
-                }
-
-                Ok(())
-            }
-        }
-    };
+// State shared between the main thread and workers
+#[derive(Debug, Clone)]
+struct RequestState {
+    thread_id: usize,
+    result: Option<String>,
 }
 
-// Example usage of the macro to define a thread-safe struct `MyStruct`.
-thread_safe_struct!(MyStruct {
-    value1: i32,
-    value2: i32,
-});
+type RequestMap = Arc<Mutex<HashMap<u64, RequestState>>>;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // Create a new instance of the thread-safe struct.
-    let my_struct = MyStruct::new(10, 20);
+#[derive(Default)]
+struct QueryRoot;
 
-    // Multi-threaded initialization of fields.
-    my_struct.multi_threaded_init()?;
+#[Object]
+impl QueryRoot {
+    async fn process_request(&self, ctx: &Context<'_>, req_id: u64) -> String {
+        let request_map = ctx.data::<RequestMap>().unwrap();
+        let request_map_lock = request_map.lock().unwrap();
 
-    // Thread-safe access to fields.
-    println!("Value1: {}", my_struct.get_value1()?);
-    println!("Value2: {}", my_struct.get_value2()?);
+        if let Some(state) = request_map_lock.get(&req_id) {
+            if let Some(result) = &state.result {
+                return result.clone();
+            } else {
+                return format!("Request {} is being processed on thread {}", req_id, state.thread_id);
+            }
+        } else {
+            return format!("Request ID {} not found.", req_id);
+        }
+    }
+}
 
-    // Thread-safe modification of fields.
-    my_struct.set_value1(100)?;
-    my_struct.set_value2(200)?;
+#[tokio::main]
+async fn main() {
+    let request_map: RequestMap = Arc::new(Mutex::new(HashMap::new()));
 
-    println!("Updated Value1: {}", my_struct.get_value1()?);
-    println!("Updated Value2: {}", my_struct.get_value2()?);
+    let schema = Schema::build(QueryRoot::default(), async_graphql::EmptyMutation, async_graphql::EmptySubscription)
+        .data(request_map.clone())
+        .finish();
 
-    Ok(())
+    // Start multiple HTTP/3 servers in separate threads
+    let (tx, rx): (Sender<(u64, usize, String)>, Receiver<(u64, usize, String)>) = channel();
+
+    let mut handles = vec![];
+    for i in 1..=4 {
+        let tx = tx.clone();
+        let request_map = request_map.clone();
+        let handle = thread::spawn(move || {
+            let rt = Runtime::new().unwrap();
+            rt.block_on(async {
+                start_server(tx, request_map, i, 8080 + i).await;
+            });
+        });
+        handles.push(handle);
+    }
+
+    // Handle responses from worker threads
+    let request_map_clone = request_map.clone();
+    let main_handle = thread::spawn(move || {
+        loop {
+            if let Ok((req_id, thread_id, result)) = rx.recv() {
+                let mut request_map = request_map_clone.lock().unwrap();
+                if let Some(state) = request_map.get_mut(&req_id) {
+                    state.result = Some(result);
+                }
+            }
+        }
+    });
+
+    // GraphQL endpoint
+    let graphql_filter = warp::path("graphql")
+        .and(async_graphql_warp::graphql(schema))
+        .and_then(|(schema, request): (Schema<QueryRoot, _, _>, GraphQLRequest)| async move {
+            let resp = schema.execute(request.into_inner()).await;
+            Ok::<_, warp::Rejection>(GraphQLResponse::from(resp))
+        });
+
+    // GraphiQL interface
+    let graphiql_filter = warp::path("graphiql").map(|| {
+        warp::reply::html(async_graphql_warp::graphiql_source("/graphql"))
+    });
+
+    // Warp server
+    warp::serve(graphql_filter.or(graphiql_filter))
+        .run(([0, 0, 0, 0], 8000))
+        .await;
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    main_handle.join().unwrap();
+}
+
+// Start individual HTTP/3 servers
+async fn start_server(tx: Sender<(u64, usize, String)>, request_map: RequestMap, thread_id: usize, port: u16) {
+    let addr = format!("0.0.0.0:{}", port).parse::<SocketAddr>().unwrap();
+
+    let mut config = ServerConfig::default();
+    config.certificate = quinn::CertificateChain::from_pem("server_cert.pem").unwrap();
+    config.private_key = quinn::PrivateKey::from_pem("server_key.pem").unwrap();
+
+    let mut endpoint = Endpoint::builder();
+    endpoint.listen(config);
+
+    let (endpoint, mut incoming) = endpoint.bind(&addr).expect("Failed to bind server");
+
+    println!("Server listening on {}", addr);
+
+    while let Some(connecting) = incoming.next().await {
+        match handle_connection(connecting).await {
+            Ok((req_id, result)) => {
+                // Send response back to main thread
+                if tx.send((req_id, thread_id, result)).is_err() {
+                    eprintln!("Main thread has stopped receiving responses.");
+                }
+            }
+            Err(e) => eprintln!("Error handling connection: {}", e),
+        }
+    }
+}
+
+async fn handle_connection(connecting: quinn::Connecting) -> Result<(u64, String), quinn::ConnectionError> {
+    let connection = connecting.await?;
+    let addr = connection.remote_address();
+
+    // Simulate a request ID
+    let req_id = rand::random::<u64>();
+
+    // Simulate processing a request
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+    Ok((req_id, format!("Response from {}", addr)))
 }
