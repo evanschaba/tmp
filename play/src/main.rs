@@ -96,7 +96,8 @@ fn main() {
             i,
             i,
             i,
-            arr[i].load(Ordering::SeqCst)
+            // arr[i].load(Ordering::SeqCst)
+            arr[i].load(Ordering::Relaxed)
         );
     });
 
