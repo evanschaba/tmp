@@ -25,7 +25,7 @@ pub struct LogMessage {
     thread_id: usize,
     message: String,
     is_stdout: bool,
-    timestamp: u64,
+    // timestamp: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -68,7 +68,7 @@ impl StateObjectHuman {
             thread_id: self.thread_id,
             message: message.to_string(),
             is_stdout,
-            timestamp,
+        //    timestamp,
         };
         self.log_sender.send(log_message).unwrap();
     }
@@ -149,14 +149,22 @@ impl StateObjectHuman {
 fn logger_thread(receiver: Receiver<LogMessage>) {
     while let Ok(log_message) = receiver.recv() {
         let log_file_path = if log_message.is_stdout {
+            // format!(
+            //     "target/logs/thread_{}_stdout_{}.log",
+            //     log_message.thread_id, log_message.timestamp
+            // )
             format!(
-                "target/logs/thread_{}_stdout_{}.log",
-                log_message.thread_id, log_message.timestamp
+                "target/logs/thread_{}_stdout.log",
+                log_message.thread_id//, log_message.timestamp
             )
         } else {
+            // format!(
+            //     "target/logs/thread_{}_stderr_{}.log",
+            //     log_message.thread_id, log_message.timestamp
+            // )
             format!(
-                "target/logs/thread_{}_stderr_{}.log",
-                log_message.thread_id, log_message.timestamp
+                "target/logs/thread_{}_stderr.log",
+                log_message.thread_id//, log_message.timestamp
             )
         };
 
