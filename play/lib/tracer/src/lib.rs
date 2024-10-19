@@ -1,0 +1,78 @@
+use proc_macro::TokenStream;
+use quote::quote;
+use syn::{parse_macro_input, FnArg, ItemFn, Pat};
+
+#[proc_macro_attribute]
+pub fn trace_and_log(_metadata: TokenStream, input: TokenStream) -> TokenStream {
+    let input_fn = parse_macro_input!(input as ItemFn);
+    let fn_name = &input_fn.sig.ident;
+    let fn_sig = &input_fn.sig;
+    let fn_block = &input_fn.block;
+
+    // Capture function parameters and names
+    let params = input_fn.sig.inputs.iter().map(|arg| {
+        if let FnArg::Typed(pat_type) = arg {
+            if let Pat::Ident(ident) = &*pat_type.pat {
+                let param_name = ident.ident.to_string();
+                let param_value = quote!(#ident);
+                quote!(format!("{} = {:?}", #param_name, #param_value))
+            } else {
+                quote!("")
+            }
+        } else {
+            quote!("")
+        }
+    });
+
+    let expanded = quote! {
+        #fn_sig {
+            use std::time::Instant;
+            use chrono::Local;
+            use std::fs::OpenOptions;
+            use std::io::Write;
+
+            let start_time = Instant::now();
+            let start_timestamp = Local::now();
+
+            // Capture function arguments and build param log
+            let param_log: Vec<String> = vec![#(#params),*];
+            let param_log_str = param_log.join(", ");
+
+            // Execute the original function and capture output
+            let output = (|| #fn_block)();
+            let end_time = Instant::now();
+            let duration = end_time.duration_since(start_time);
+            let end_timestamp = Local::now();
+
+            // Memory address of the output (as pointer)
+            let output_ptr = &output as *const _;
+
+            // Generate log data
+            let log_data = format!(
+                "Function: {}\nParams: [{}]\nOutput: {:?}\nStart: {}\nEnd: {}\nDuration: {:?}ns\nMemory Address: {:?}\n",
+                stringify!(#fn_name),
+                param_log_str,
+                output,
+                start_timestamp.format("%Y-%m-%d %H:%M:%S"),
+                end_timestamp.format("%Y-%m-%d %H:%M:%S"),
+                duration.as_nanos(),
+                output_ptr
+            );
+
+            // Print trace data to stdout
+            dbg!(&log_data);
+
+            // Append trace data to file
+            let mut file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("target/logs/traces.log")
+                .expect("Unable to open log file.");
+            writeln!(file, "{}", log_data).expect("Unable to write log file.");
+
+            output
+        }
+    };
+
+    TokenStream::from(expanded)
+}
