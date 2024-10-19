@@ -1,9 +1,11 @@
 use tracer::trace_and_log;
 
+#[trace_and_log]
 fn a() {
     println!("Executing function a");
 }
 
+#[trace_and_log]
 pub fn sum(x: u8, y: u8) -> u8 {
     x + y
 }
