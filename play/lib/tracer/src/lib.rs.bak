@@ -15,13 +15,12 @@ pub fn trace_and_log(_metadata: TokenStream, input: TokenStream) -> TokenStream 
             if let Pat::Ident(ident) = &*pat_type.pat {
                 let param_name = ident.ident.to_string();
                 let param_value = quote!(#ident);
-                let param_type = quote!(#pat_type.ty);
-                quote!(format!("{} {} = {:?}", #param_name, stringify!(#param_type), #param_value))
+                quote!(format!("{} = {:?}", #param_name, #param_value))
             } else {
                 quote!("")
             }
         } else {
-            quote!("self")
+            quote!("")
         }
     });
 
@@ -31,9 +30,9 @@ pub fn trace_and_log(_metadata: TokenStream, input: TokenStream) -> TokenStream 
             use chrono::Local;
             use std::fs::OpenOptions;
             use std::io::Write;
-            use std::mem::size_of_val;
 
             let start_time = Instant::now();
+            let start_timestamp = Local::now();
 
             // Capture function arguments and build param log
             let param_log: Vec<String> = vec![#(#params),*];
@@ -43,26 +42,25 @@ pub fn trace_and_log(_metadata: TokenStream, input: TokenStream) -> TokenStream 
             let output = (|| #fn_block)();
             let end_time = Instant::now();
             let duration = end_time.duration_since(start_time);
-            let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+            let end_timestamp = Local::now();
 
-            // Memory information of the output
-            let output_mem_ptr = &output as *const _ as usize;
-            let output_mem_size = size_of_val(&output);
+            // Memory address of the output (as pointer)
+            let output_ptr = &output as *const _;
 
-            // Generate log entry for this function
+            // Generate log data
             let log_data = format!(
-                "[INFO][{}][{}ms] {}({}) -> result: {:?} (mem @ 0x{:X}, {} bytes)",
-                timestamp,
-                duration.as_millis(),
+                "Function: {}\nParams: [{}]\nOutput: {:?}\nStart: {}\nEnd: {}\nDuration: {:?}ns\nMemory Address: {:?}\n",
                 stringify!(#fn_name),
                 param_log_str,
                 output,
-                output_mem_ptr,
-                output_mem_size
+                start_timestamp.format("%Y-%m-%d %H:%M:%S"),
+                end_timestamp.format("%Y-%m-%d %H:%M:%S"),
+                duration.as_nanos(),
+                output_ptr
             );
 
             // Print trace data to stdout
-            println!("{}", log_data);
+            dbg!(&log_data);
 
             // Append trace data to file
             let mut file = OpenOptions::new()
@@ -77,4 +75,4 @@ pub fn trace_and_log(_metadata: TokenStream, input: TokenStream) -> TokenStream 
     };
 
     TokenStream::from(expanded)
-}
+} 

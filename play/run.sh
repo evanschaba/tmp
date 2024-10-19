@@ -3,7 +3,7 @@
 head -n 5000 run.sh | pbcopy
 
 # Remove the previous tmp file if it exists
-rm -f tmp
+rm -rf tmp ./target/logs/
 
 # Create log directory if it doesn't exist
 mkdir -p target/logs
@@ -36,8 +36,8 @@ mkdir -p target/logs
     # Run the application with backtrace enabled
     RUST_BACKTRACE=1 cargo run
 
-    echo "\n---- target/logs/trace.logs: ----- \n"
-    head -n 5000 target/logs/trace.log
+    echo "\n---- target/logs/traces.logs: ----- \n"
+    head -n 5000 target/logs/traces.log
 } &>tmp
 
 head -n 5000 tmp | pbcopy

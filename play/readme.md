@@ -26,38 +26,13 @@ fn main()
 
 expected output
 
-fn sum()
-params: a: u8, b: u8
-output: ()
-exec_start_time: DD-MM-YYYY HH:MM:SS
-exec_end_time: DD-MM-YYYY HH:MM:SS
-exec_duration: Xms
-mem usage: xxx
-output ptr: xxx
-ERROR_LOGS: 
-WARN_LOGS: 
-INFO_LOGS: 
+[log-level][timestamp][duration]
+function_name(param_name param_type(param_value), ...) -> return_name (return_type(return_value@return_mem_ptr&return_value_mem_byte_size)) {
 
-fn a()
-params: none
-output: ()
-exec_start_time: DD-MM-YYYY HH:MM:SS
-exec_end_time: DD-MM-YYYY HH:MM:SS
-exec_duration: Xms
-mem usage: xxx
-output ptr: xxx
-ERROR_LOGS: 
-WARN_LOGS: 
-INFO_LOGS: 
+        [log-level][timestamp][duration]
+        function_name(param_name param_type(param_value), ...) -> return_name (return_type(return_value@return_mem_ptr&return_value_mem_byte_size))
+        
+        [log-level][timestamp][duration]
+        function_name(param_name param_type(param_value), ...) -> return_name (return_type(return_value@return_mem_ptr&return_value_mem_byte_size))
+}
 
-fn main()
-params: none
-output: ()
-exec_start_time: DD-MM-YYYY HH:MM:SS
-exec_end_time: DD-MM-YYYY HH:MM:SS
-exec_duration: Xms
-mem usage: xxx
-output ptr: xxx
-ERROR_LOGS: 
-WARN_LOGS: 
-INFO_LOGS: 
