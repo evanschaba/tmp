@@ -12,7 +12,10 @@ pub fn sum(x: u8, y: u8) -> u8 {
 
 #[trace_and_log]
 fn main() {
+    // Create logs directory if it doesn't exist
     std::fs::create_dir_all("target/logs").unwrap();
+
+    // Initialize logging with log4rs
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
 
     a();

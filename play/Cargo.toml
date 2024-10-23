@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "play"                  # Optional, specify if you want to have a library as well
-path = "lib/tracer/src/lib.rs" # Specify if you have a library codebase
+name = "play"  # Optional, specify if you want to have a library as well
+path = "lib/tracer/src/lib.rs"  # Specify if you have a library codebase
 proc-macro = true
 
 [dependencies]
