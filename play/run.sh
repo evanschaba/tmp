@@ -3,7 +3,8 @@
 head -n 5000 run.sh | pbcopy
 
 # Remove the previous target/logs/tmp file if it exists
-rm -rf target/logs/tmp target/logs/traces.log
+# rm -rf target/logs/tmp target/logs/traces.log
+rm -rf target/logs/tmp
 
 # Create log directory if it doesn't exist
 mkdir -p target/logs
@@ -29,15 +30,16 @@ mkdir -p target/logs
     # cargo clean
 
     # Output the first 1000 lines of the relevant source files and Cargo.toml
-    head -n 1000 lib/tracer/src/lib.rs src/main.rs
+    #head -n 1000 lib/tracer/src/lib.rs src/main.rs
+    head -n 1000 src/main.rs
 
     echo "\n---- cargo run output: ----- \n"
 
     # Run the application with backtrace enabled
     RUST_BACKTRACE=1 cargo run
 
-    echo "\n---- target/logs/traces.log: ----- \n"
-    head -n 5000 target/logs/traces.log
+    # echo "\n---- target/logs/traces.log: ----- \n"
+    # head -n 5000 target/logs/traces.log
 } &>target/logs/tmp
 
 head -n 5000 target/logs/tmp | pbcopy
