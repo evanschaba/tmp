@@ -1,17 +1,18 @@
-use std::fs::{File, OpenOptions};
-use std::io::{self, Write};
-use std::sync::Mutex;
-use chrono::Local;
-use uuid::Uuid;
+use lazy_static::lazy_static;
+use std::{
+    fs::OpenOptions,
+    io::{self, Write},
+    sync::Mutex,
+};
 
-lazy_static::lazy_static! {
-    static ref LOGGER: Mutex<File> = Mutex::new(
+lazy_static! {
+    static ref LOGGER: Mutex<io::BufWriter<std::fs::File>> = Mutex::new(io::BufWriter::new(
         OpenOptions::new()
-            .append(true)
             .create(true)
-            .open(format!("target/logs/{}.log", Local::now().format("%Y%m%d-%H%M%S")))
+            .append(true)
+            .open("target/logs/traces.log")
             .expect("Failed to create log file")
-    );
+    ));
 }
 
 #[derive(Debug, Clone)]
@@ -19,70 +20,79 @@ enum Command {
     Run(i32, i32),
     PrintResultSum(i32, i32),
     Sum(i32, i32),
+    Add(i32, i32),
 }
 
 struct StateMachine {
-    state: i32,
-    history: Vec<Command>,
+    depth: usize,
 }
 
 impl StateMachine {
     fn new() -> Self {
-        Self {
-            state: 0,
-            history: Vec::new(),
-        }
+        Self { depth: 0 }
     }
 
-    fn log(&self, msg: &str) {
+    fn log(&self, msg: &str) -> io::Result<()> {
         let mut logger = LOGGER.lock().unwrap();
-        writeln!(logger, "{}", msg).unwrap();
+        let indentation = " ".repeat(self.depth * 4);
+        writeln!(logger, "{}{}", indentation, msg)?;
+        logger.flush()
     }
 
-    fn execute(&mut self, command: Command) -> i32 {
-        self.history.push(command.clone());
-        self.log(&format!("Executing: {:?}", command));
-        
+    fn execute(&mut self, command: Command) -> io::Result<()> {
+        self.depth = 0; // Reset depth for each new command from main
+        self.run_command(command)
+    }
+
+    fn run_command(&mut self, command: Command) -> io::Result<()> {
         match command {
-            Command::Run(a, b) => self.run(a, b),
-            Command::PrintResultSum(a, b) => self.print_result_sum(a, b),
-            Command::Sum(a, b) => self.sum(a, b),
+            Command::Run(a, b) => {
+                self.log(&format!("run({}, {})", a, b))?;
+                self.depth += 1;
+                self.print_result_sum(a, b)?;
+                self.depth -= 1;
+            }
+            Command::PrintResultSum(a, b) => {
+                self.log(&format!("print_sum({}, {})", a, b))?;
+                self.depth += 1;
+                self.sum(a, b)?;
+                self.depth -= 1;
+            }
+            Command::Sum(a, b) => {
+                self.log(&format!("sum({}, {})", a, b))?;
+                self.depth += 1;
+                self.add(a, b)?;
+                self.depth -= 1;
+            }
+            Command::Add(a, b) => {
+                let result = a + b;
+                self.log(&format!("add({}, {}) -> {}", a, b, result))?;
+            }
         }
+        Ok(())
     }
 
-    fn run(&mut self, a: i32, b: i32) -> i32 {
-        self.log("main()");
-        let result = self.print_result_sum(a, b);
-        self.log(&format!("main -> run({}, {}) -> result: {}\n", a, b, result));
-        result
+    fn print_result_sum(&self, a: i32, b: i32) -> io::Result<()> {
+        self.log(&format!("print_result_sum({}, {})", a, b))?;
+        self.sum(a, b)?;
+        Ok(())
     }
 
-    fn print_result_sum(&mut self, a: i32, b: i32) -> i32 {
-        self.log(&format!("    run -> print_result_sum({}, {})", a, b));
-        let result = self.sum(a, b);
-        self.log(&format!("        print_result_sum -> sum({}, {}) -> result: {}\n", a, b, result));
-        result
-    }
-
-    fn sum(&mut self, a: i32, b: i32) -> i32 {
+    fn sum(&self, a: i32, b: i32) -> io::Result<()> {
         let result = a + b;
-        self.log(&format!("            sum({}, {}) -> {}", a, b, result));
-        result
+        self.log(&format!("sum({}, {}) -> {}", a, b, result))?;
+        Ok(())
     }
 
-    fn replay(&mut self) {
-        for command in &self.history {
-            self.execute(command.clone());
-        }
+    fn add(&self, a: i32, b: i32) -> io::Result<()> {
+        let result = a + b;
+        self.log(&format!("add({}, {}) -> {}", a, b, result))?;
+        Ok(())
     }
 }
 
 fn main() -> io::Result<()> {
     let mut sm = StateMachine::new();
-    sm.execute(Command::Run(0, 0));
-
-    sm.log("Starting replay...");
-    sm.replay();
-
+    sm.execute(Command::Run(1, 1))?;
     Ok(())
 }

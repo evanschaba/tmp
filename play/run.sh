@@ -4,7 +4,7 @@ head -n 5000 run.sh | pbcopy
 
 # Remove the previous target/logs/tmp file if it exists
 # rm -rf target/logs/tmp target/logs/traces.log
-rm -rf target/logs/tmp
+rm -rf target/logs/
 
 # Create log directory if it doesn't exist
 mkdir -p target/logs
