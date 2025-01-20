@@ -112,3 +112,4 @@ max children: 2 * C = 4
 ```
 
 With these rules, B-trees ensure efficient searches, inserts, and deletes while maintaining `O(log n)` complexity.
+

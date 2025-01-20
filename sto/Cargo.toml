@@ -1,0 +1,9 @@
+[package]
+name = "sto"
+edition = "2021"
+
+[lib]
+name = "lib"
+path = "lib/mod.rs"
+
+[dependencies]
