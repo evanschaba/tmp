@@ -232,19 +232,17 @@ pub fn handle_request(db: &Arc<Database>, request: &str) -> String {
             Ok(None) => "Key not found".to_string(),
             Err(_) => "Error".to_string(),
         },
-        "UPDATE" => {
-            if payload.is_empty() {
-                return "Missing resource".to_string();
-            }
-
-            match serde_json::from_str::<Resource>(payload) {
-                Ok(resource) => match db.update(key.to_string(), resource) {
-                    Ok(_) => "Updated successfully".to_string(),
-                    Err(e) => format!("Error: {}", e),
-                },
-                Err(_) => "Invalid data format".to_string(),
-            }
-        }
+        "UPDATE" => match serde_json::from_str::<Resource>(payload) {
+            Ok(resource) => match db.update(key.to_string(), resource) {
+                Ok(_) => "Updated successfully".to_string(),
+                Err(e) => format!("Error: {}", e),
+            },
+            Err(_) => "Invalid data format".to_string(),
+        },
+        "DELETE" => match db.delete(key) {
+            Ok(_) => "Deleted successfully".to_string(),
+            Err(_) => "Error".to_string(),
+        },
         _ => "Unknown command".to_string(),
     }
 }
