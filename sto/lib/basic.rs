@@ -200,7 +200,7 @@ impl Server {
     }
 
     // Add timeout helper for tests
-    #[cfg(test)]
+    // #[cfg(test)]
     pub async fn run_with_timeout(&self, duration: std::time::Duration) -> Result<()> {
         tokio::select! {
             result = self.run() => result,
