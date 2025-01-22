@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use thiserror::Error;
 use tokio::net::UdpSocket;
 use tokio::sync::broadcast;
@@ -202,7 +201,7 @@ impl Server {
 
     // Add timeout helper for tests
     #[cfg(test)]
-    pub async fn run_with_timeout(&self, duration: Duration) -> Result<()> {
+    pub async fn run_with_timeout(&self, duration: std::time::Duration) -> Result<()> {
         tokio::select! {
             result = self.run() => result,
             _ = tokio::time::sleep(duration) => Ok(()),
