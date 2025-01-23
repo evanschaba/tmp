@@ -1,6 +1,6 @@
 use lib::basic::*;
 
-#[tokio::test]
+#[tokio::test] // TODO: dbg why it's hanging
 async fn test_database_operations() -> Result<()> {
     let db = Database::new(Some(":memory:"))?;
 
@@ -32,7 +32,7 @@ async fn test_database_operations() -> Result<()> {
     }
 
     // Test REMOVE
-    db.remove_from_list(&key, "Bob")?;
+    db.remove_from_list(&key, Human { name: "Bob".to_string() })?;
 
     if let Some(Resource::List(list)) = db.read(&key)? {
         assert_eq!(list.len(), 2);
