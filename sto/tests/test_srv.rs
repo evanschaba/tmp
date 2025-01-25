@@ -16,34 +16,34 @@ struct Animal {
     species: String,
 }
 
-async fn setup_test_server<T>() -> (Server<T>, SocketAddr, UdpSocket)
-where
-    T: Serialize + for<'a> Deserialize<'a> + PartialEq + Clone + Send + Sync + 'static,
-{
-    let port = get_next_available_port().await;
-    let addr = format!("127.0.0.1:{}", port);
-    let db = Database::<T>::new(Some(":memory:")).unwrap();
-    let server = Server::new(&addr, db).await.unwrap();
-    let server_addr = server.get_addr();
+// async fn setup_test_server<T>() -> (Server<T>, SocketAddr, UdpSocket)
+// where
+//     T: Serialize + for<'a> Deserialize<'a> + PartialEq + Clone + Send + Sync + 'static,
+// {
+//     let port = get_next_available_port().await;
+//     let addr = format!("127.0.0.1:{}", port);
+//     let db = Database::<T>::new(Some(":memory:")).unwrap();
+//     let server = Server::new(&addr, db).await.unwrap();
+//     let server_addr = server.get_addr();
 
-    let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+//     let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
 
-    // Spawn server in the background with a timeout
-    tokio::spawn({
-        let server_clone = server.clone();
-        async move {
-            if let Err(e) = timeout(TEST_TIMEOUT, server_clone.run()).await {
-                eprintln!("Server run timeout: {}", e);
-                server_clone.shutdown();
-            }
-        }
-    });
+//     // Spawn server in the background with a timeout
+//     tokio::spawn({
+//         let server_clone = server.clone();
+//         async move {
+//             if let Err(e) = timeout(TEST_TIMEOUT, server_clone.run()).await {
+//                 eprintln!("Server run timeout: {}", e);
+//                 server_clone.shutdown();
+//             }
+//         }
+//     });
 
-    // Give the server a moment to start
-    tokio::time::sleep(OPERATION_TIMEOUT).await;
+//     // Give the server a moment to start
+//     tokio::time::sleep(OPERATION_TIMEOUT).await;
 
-    (server, server_addr, client)
-}
+//     (server, server_addr, client)
+// }
 
 async fn send_and_verify(
     client: &UdpSocket,
