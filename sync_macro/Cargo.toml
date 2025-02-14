@@ -1,0 +1,13 @@
+[package]
+name = "sync_macro"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+members = [
+    "lib/synco"
+]
+
+[dependencies]
+synco = { path = "lib/synco" }
+tokio = { version = "1", features = ["full"] }
