@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::{quote, format_ident};
-use syn::{parse_macro_input, DeriveInput, Data, Fields, Attribute, Meta};
+use syn::{parse_macro_input, DeriveInput, Data, Fields};
 
 #[proc_macro_attribute]
 pub fn sync(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -45,6 +45,8 @@ pub fn sync(_attr: TokenStream, item: TokenStream) -> TokenStream {
     });
 
     let expanded = quote! {
+        #input
+
         #[derive(Clone)]
         pub struct #state_struct_name {
             #(#state_fields)*

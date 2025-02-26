@@ -1,53 +1,30 @@
-use synco::sync;
-use std::sync::Arc;
-use tokio::sync::watch;
-use tokio::task;
-use tokio::time::{sleep, Duration};
-
-#[sync]
-pub struct MyStruct {
-    pub a: u32,
-    #[sync]
-    pub b: u32,
+fn count_permutations(n: usize) -> usize {
+    let mut dp = vec![0; n + 1];
+    dp[0] = 1;
+    
+    for i in 1..=n {
+        for j in (1..=i).rev() {
+            dp[i] += dp[i - j];
+        }
+    }
+    
+    dp[n]
 }
 
-pub async fn a(state: Arc<MyStructState>) {
-    let mut rx = state.b.subscribe();
-    loop {
-        rx.changed().await.unwrap();
-        println!("a() detected update: {}", *rx.borrow());
+fn main() {
+    let number = 2;
+    println!("Number of permutations to form {}: {}", number, count_permutations(number));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_count_permutations() {
+        assert_eq!(count_permutations(1), 1);  // [1]
+        assert_eq!(count_permutations(2), 2);  // [2], [1+1]
+        assert_eq!(count_permutations(3), 4);  // [3], [2+1], [1+2], [1+1+1]
+        assert_eq!(count_permutations(4), 8);  // [4], [3+1], [1+3], [2+2], [2+1+1], [1+2+1], [1+1+2], [1+1+1+1]
     }
 }
-
-pub async fn B(state: Arc<MyStructState>) {
-    let mut rx = state.b.subscribe();
-    loop {
-        rx.changed().await.unwrap();
-        println!("B() detected update: {}", *rx.borrow());
-    }
-}
-
-#[tokio::main]
-async fn main() {
-    let state = Arc::new(MyStructState::new());
-
-    let a_task = {
-        let state = state.clone();
-        task::spawn(a(state))
-    };
-
-    let b_task = {
-        let state = state.clone();
-        task::spawn(B(state))
-    };
-
-    sleep(Duration::from_secs(1)).await;
-    state.set_b(42);
-
-    sleep(Duration::from_secs(1)).await;
-    state.set_b(100);
-
-    a_task.await.unwrap();
-    b_task.await.unwrap();
-}
- 
